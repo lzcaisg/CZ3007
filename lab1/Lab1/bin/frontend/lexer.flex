@@ -41,6 +41,7 @@ WhiteSpace = [ ] | \t | \f | \n | \r
 
 %%
 /* put in your rules here.    */
+	//WHITESPACE
 	{WhiteSpace} {}
 
 	// KEYWORDS
