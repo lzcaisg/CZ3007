@@ -1,0 +1,62 @@
+package test;
+
+import static org.junit.Assert.fail;
+
+import java.io.StringReader;
+
+import lexer.Lexer;
+
+import org.junit.Test;
+
+import parser.Parser;
+
+public class ParserTests {
+	private void runtest(String src) {
+		runtest(src, true);
+	}
+
+	private void runtest(String src, boolean succeed) {
+		Parser parser = new Parser();
+		try {
+			parser.parse(new Lexer(new StringReader(src)));
+			if(!succeed) {
+				fail("Test was supposed to fail, but succeeded");
+			}
+		} catch (beaver.Parser.Exception e) {
+			if(succeed) {
+				e.printStackTrace();
+				fail(e.getMessage());
+			}
+		} catch (Throwable e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	@Test
+	public void testEmptyModule() {
+		runtest("module Test { }");
+	}
+	
+	@Test
+	public void test1() {
+		runtest("module Test { import TensorFlow; }");
+	}
+	
+	@Test
+	public void test2() {
+		runtest("module Test { import TensorFlow; int a; }");
+	}
+	
+	@Test
+	public void test3() {
+		runtest("module Test { import TensorFlow; int a; public boolean foo(int b, int c){a = 2+3; return 35; break;} }");
+	}
+	
+	
+	@Test
+	public void test4() {
+		runtest("module Test { import TensorFlow; int a; public boolean foo(int b, int c){ if (a > b) return;} }");
+	}
+	
+}

@@ -1,0 +1,265 @@
+// package the generated Java class lives in; no need to change this
+%package "parser";
+
+// name of the generated Java class; no need to change this
+%class "Parser";
+
+// no need to change this either
+%embed {:
+	// turn off automated error recovery
+	@Override
+	protected void recoverFromError(Symbol token, TokenStream in) throws java.io.IOException, Exception {
+		super.recoverFromError(new Symbol(0), in);
+	}
+:};
+
+// the list of all terminals; no need to change this
+%terminals MODULE, INT, VOID, IF, ELSE, WHILE, RETURN, BREAK, BOOLEAN, PUBLIC, TRUE, FALSE,
+           INT_LITERAL, STRING_LITERAL, ID, TYPE, IMPORT,
+           PLUS, MINUS, TIMES, DIV, MOD, EQEQ, NEQ, LEQ, GEQ, LT, GT,
+           LBRACKET, RPAREN, COMMA, RCURLY, LCURLY, SEMICOLON, RBRACKET, LPAREN, EQL;
+           
+// declaration of start symbol; no need to change this
+%goal Module;
+
+// temporary declaration, you can remove this once you have written all other rules
+%goal Dummy;
+
+/* TODO: Flesh out the rule for Module, and add rules for other nonterminals. Here is an example
+         of a rule you may want to add:
+         
+   Accessibility = PUBLIC
+		  |
+		  ;
+*/
+
+
+
+/************************ MY RULES STARTS HERE!!! ************************/
+
+/* 1. ================================= 
+A module consists of the keyword MODULE, followed by an identifier (which is the module’s
+name), followed by an opening curly brace, followed by imports, followed by declarations, followed by a
+closing curly brace.
+=======================================*/
+
+Module = MODULE ID LCURLY Imports Declarations RCURLY;
+
+
+/* 2. ================================= 
+A module’s imports (nonterminal Imports) specify what other modules this module will import. They
+consist of zero or more import statements. An import statement (nonterminal Import) consists of the keyword
+import, followed by an identifier, followed by a semicolon. The identifier is the name of a module to be
+imported.
+=======================================*/
+
+Imports = Imports Import
+		|
+		;
+
+Import = IMPORT ID SEMICOLON;
+
+
+/* 3.1. ================================= 
+A module’s declarations (nonterminal Declarations) consist of zero or more declarations. A declaration is
+either a function declaration, or a field declaration, or a type declaration.
+
+A function declaration consists of an accessibility specifier, a type name, an identifier, an opening
+parenthesis, a parameter list, a closing parenthesis, an opening curly brace, a possibly empty list of statements,
+and a closing curly brace.
+
+A field declaration consists of an accessibility specifier, a type name, an identifier, and a semicolon.
+
+A type declaration consists of an accessibility specifier, the keyword type, an identifier, a single equals
+symbol, a string literal, and a semicolon.
+=======================================*/
+
+Declarations = Declarations Declaration
+		|
+		;
+
+Declaration = Function_declaration
+		| Field_declaration
+		| Type_declaration;
+		
+Function_declaration = Accessibility Type_name ID LPAREN Parameters RPAREN LCURLY Statements RCURLY;
+
+Field_declaration = Accessibility Type_name ID SEMICOLON;
+
+Type_declaration = Accessibility TYPE ID EQL STRING_LITERAL SEMICOLON;
+
+
+/* 3.2. ================================= 
+- An accessibility specifier consists of either the keyword public, or of nothing at all.
+
+- A type name is either a primitive type, an array type, or an identifier.
+
+- A primitive type is one of the keywords void, boolean and int.
+
+- An array type is a type name, followed by a left bracket, followed by a right bracket. (Hint: In order to
+avoid LALR conflicts, you will need to expand the definition of the array type nonterminal as discussed in the
+tutorial.)
+
+- A parameter list is a possibly empty list of parameters separated by commas. A parameter is a type name
+followed by an identifier.
+=======================================*/
+
+Accessibility = PUBLIC
+		|
+		;
+
+Type_name = Primitive_type
+		| Array_type
+		| ID
+		;
+
+Primitive_type = VOID
+		| BOOLEAN
+		| INT
+		;
+
+Array_type = Primitive_type LBRACKET RBRACKET
+		| Array_type LBRACKET RBRACKET
+		| ID LBRACKET RBRACKET
+		;
+
+Parameters = Parameter Parameter_tail
+		|
+		;
+		
+Parameter_tail = COMMA Parameter Parameter_tail
+		|
+		;
+
+Parameter = Type_name ID; 
+
+
+/* 3.3. ================================= 
+A statement is one of the following:
+
+• a local variable declaration, which consists of a type name, followed by an identifier, followed by a
+semicolon;
+
+• a block of statements, which consists of an opening curly brace, followed by a possibly empty list of
+statements, followed by a closing curly brace;
+
+• an if statement, which consists of an IF keyword, an opening parenthesis, an expression, a closing
+parenthesis, a statement, an ELSE keyword, and another statement; optionally, the ELSE keyword and the
+last statement may be missing (Note: as discussed, this will lead to a shift-reduce conflict, which is
+correctly resolved by favouring shift over reduce.);
+
+• a while statement, which consists of a WHILE keyword, an opening parenthesis, an expression, a closing
+parenthesis, and a statement;
+
+• a break statement, which consists of a BREAK keyword followed by a semicolon;
+
+• a return statement, which consists of a RETURN keyword, followed by an optional expression, followed
+by a semicolon;
+
+• an expression statement, which consists of an expression followed by a semicolon.
+=======================================*/
+
+Statements = Statement Statements
+		|
+		;
+
+Statement = Type_name ID SEMICOLON
+		| LCURLY Statements RCURLY
+		| IF LPAREN Expression RPAREN Statement ELSE Statement | IF Statement
+		| WHILE LPAREN Expression RPAREN Statement
+		| BREAK SEMICOLON
+		| RETURN Expression SEMICOLON | RETURN SEMICOLON
+		| Expression SEMICOLON
+		;
+
+/* 3.4. ================================= 
+An expression is either an assignment or a right hand side expression.
+
+An assignment is a left hand side expression, followed by a single equals sign, followed by an expression.
+
+A left hand side expression is either an identifier or an array access. An array access is a left hand side
+expression, followed by an opening bracket, followed by an expression, followed by a closing bracket.
+
+A right hand side expression is an arithmetic expression, optionally followed by a comparison operator and
+another arithmetic expression. A comparison operator is one of EQEQ, NEQ, LT, LEQ, GT, GEQ.
+
+An arithmetic expression is either an arithmetic expression, followed by an additive operator, followed by a
+term; or just a term. An additive operator is either PLUS or MINUS.
+
+A term is either a term, followed by a multiplicative operator, followed by a factor; or just a factor. A
+multiplicative operator is one of TIMES, DIV, MOD.
+
+A factor is either a MINUS followed by a factor, or a primary expression.
+=======================================*/
+
+Expression = Assignment
+		| RHS_expression
+		;
+		
+Assignment = LHS_expression EQL Expression;
+
+LHS_expression = ID
+		| Array_access
+		;
+		
+Array_access = LHS_expression LBRACKET Expression RBRACKET;
+
+RHS_expression = Arithmetic_expression
+		| Arithmetic_expression Comparison_operator Arithmetic_expression
+		;
+
+Comparison_operator = EQEQ | NEQ | LT | LEQ | GT | GEQ;
+		
+Arithmetic_expression = Arithmetic_expression Additive_operator Term
+		| Term
+		;
+
+Additive_operator = PLUS | MINUS;
+
+Term = Term Multiplicative_operator Factor
+		| Factor
+		;
+
+Multiplicative_operator = TIMES | DIV | MOD;
+
+Factor = MINUS Factor
+		| Primary_expression
+		;
+
+/* 3.5. ================================= 
+A primary expression is one of the following:
+• a left hand side expression;
+• a function call: an identifier, followed by an opening parenthesis, followed by a possibly empty list of
+expressions separated by comma, followed by a closing parenthesis;
+• an array expression: an opening bracket, followed by a non-empty list of expressions separated by
+comma, followed by a closing bracket;
+• a string literal;
+• an integer literal;
+• one of the Boolean literals TRUE and FALSE;
+• a parenthesised expression: an opening parenthesis, followed by an expression, followed by a closing
+parenthesis.
+=======================================*/
+
+Primary_expression = LHS_expression
+		| ID LPAREN Expressions RPAREN      // Function Call
+		| LBRACKET Expression Expression_tail RBRACKET
+		| STRING_LITERAL
+		| INT_LITERAL
+		| TRUE | FALSE
+		| LPAREN Expression RPAREN
+		;
+
+Expressions = Expression Expression_tail
+		|
+		;
+
+Expression_tail = COMMA Expression Expression_tail
+		|
+		;
+
+
+/************************* MY RULES ENDS HERE!!! *************************/
+
+/* Dummy rule to make the lexer compile. Remove this once you have written all other rules. */	  
+Dummy = MODULE INT VOID IF ELSE WHILE RETURN BREAK BOOLEAN PUBLIC TRUE FALSE INT_LITERAL STRING_LITERAL ID TYPE IMPORT
+           PLUS MINUS TIMES DIV MOD EQEQ NEQ LEQ GEQ LT GT LBRACKET RPAREN COMMA RCURLY LCURLY SEMICOLON RBRACKET LPAREN EQL;

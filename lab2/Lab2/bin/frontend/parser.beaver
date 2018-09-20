@@ -38,7 +38,7 @@
 /************************ MY RULES STARTS HERE!!! ************************/
 
 /* 1. ================================= 
-A module consists of the keyword module, followed by an identifier (which is the module’s
+A module consists of the keyword MODULE, followed by an identifier (which is the module’s
 name), followed by an opening curly brace, followed by imports, followed by declarations, followed by a
 closing curly brace.
 =======================================*/
@@ -159,13 +159,13 @@ by a semicolon;
 • an expression statement, which consists of an expression followed by a semicolon.
 =======================================*/
 
-Statements = Statements Statement
+Statements = Statement Statements
 		|
 		;
 
 Statement = Type_name ID SEMICOLON
 		| LCURLY Statements RCURLY
-		| IF LPAREN Expression RPAREN Statement ELSE Statement | IF Statement
+		| IF LPAREN Expression RPAREN Statement ELSE Statement | IF LPAREN Expression RPAREN Statement
 		| WHILE LPAREN Expression RPAREN Statement
 		| BREAK SEMICOLON
 		| RETURN Expression SEMICOLON | RETURN SEMICOLON
